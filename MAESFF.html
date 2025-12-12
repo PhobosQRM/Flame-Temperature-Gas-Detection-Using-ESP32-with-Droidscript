@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home - ESP32 Web Server</title>
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-medium: #1a1a1a;
+            --text-light: #e0e0e0;
+            --accent-blue: #00bfff;
+            --accent-danger: #ff4500;
+            --accent-safe: #3cb371;
+            --accent-warning: #ffcc00;
+            --border-radius: 16px;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            padding-top: 50px;
+            padding-bottom: 80px;
+            background-image: radial-gradient(circle at top, var(--bg-medium) 1%, var(--bg-dark) 80%);
+        }
+        
+        .main-container {
+            width: 95%; max-width: 600px; padding: 10px; background: transparent;  margin-top: 20px;
+            margin-bottom: 40px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 25px;
+        }
+        .loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(18, 18, 18, 0.95);
+            display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 1; pointer-events: all; transition: opacity 0.4s ease;
+        }
+        .loader.hidden { opacity: 0; pointer-events: none; }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid rgba(255, 255, 255, 0.2); border-top: 5px solid var(--accent-blue);
+            border-radius: 50%; animation: spin 0.6s linear infinite;  box-shadow: 0 0 15px var(--accent-blue);
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* --- SHARED CARD STYLES --- */
+        .status-card {
+            width: 90%; padding: 30px 20px; border-radius: var(--border-radius); position: relative; overflow: hidden;
+            transition: all 0.5s ease; backdrop-filter: blur(10px); display: flex; flex-direction: column; align-items: center;
+            background: linear-gradient(145deg, rgba(20, 20, 20, 0.9), rgba(10, 10, 10, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        }
+        .status-title {
+            font-size: 0.7em; font-weight: 700; margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.5); letter-spacing: 3px; text-transform: uppercase; width: 100%;
+        }
+        /* --- FLAME BOX --- */
+        #flame-status-box { border-color: rgba(60, 179, 113, 0.2); }
+        .danger-active {
+            background: linear-gradient(-45deg, #380000, #5a0000, #800000, #380000) !important;
+            background-size: 400% 400%;
+            animation: pulse-bg 3s ease infinite !important;
+            border: 2px solid #ff4500 !important;
+            box-shadow: 0 0 30px rgba(255, 69, 0, 0.6), inset 0 0 50px rgba(255, 0, 0, 0.5) !important;
+        }
+        /* --- MQ2 BOX & WARM STATE --- */
+        .warning-active {
+            background: linear-gradient(-45deg, #4d4d00, #806600, #b38f00, #4d4d00) !important;
+            background-size: 400% 400%;
+            animation: pulse-bg 3s ease infinite !important;
+            border: 2px solid #ffcc00 !important;
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.6), inset 0 0 50px rgba(255, 204, 0, 0.5) !important;
+        }
+        /* --- DHT11 COLD STATE (BLUE) --- */
+        .cold-active {
+            background: linear-gradient(-45deg, #001a33, #003366, #004d99, #001a33) !important;
+            background-size: 400% 400%;
+            animation: pulse-bg 5s ease infinite !important;
+            border: 2px solid #00bfff !important;
+            box-shadow: 0 0 30px rgba(0, 191, 255, 0.4), inset 0 0 30px rgba(0, 191, 255, 0.2) !important;
+        }
+        /* --- CHART CARD --- */
+        .chart-card-style {
+            background: rgba(15, 15, 15, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            padding: 20px;
+        }
+        canvas { width: 100% !important; height: 200px !important; }
+
+        /* --- SPLIT LAYOUT --- */
+        .split-content { display: flex; flex-direction: row; justify-content: space-between; align-items: center; width: 100%; padding: 10px 0; }
+        .split-left { text-align: left; border-right: 1px solid rgba(255, 255, 255, 0.1); padding-right: 20px; flex: 1; }
+        .split-right { text-align: right; padding-left: 20px; flex: 1; }
+        
+        .big-value { font-size: 2.5em; font-weight: 800; color: var(--text-light); line-height: 1; }
+        .small-label { font-size: 0.9em; color: rgba(255,255,255,0.4); font-weight: 600; }
+        .status-text { font-size: 1.4em; font-weight: 800; text-transform: uppercase; line-height: 1.1; }
+
+        /* --- TEXT COLORS --- */
+        .safe-text { color: var(--accent-safe); text-shadow: 0 0 15px rgba(60, 179, 113, 0.4); }
+        .danger-text { color: #fff; text-shadow: 0 0 10px #ff4500, 0 0 20px #ff0000; }
+        .warning-text { color: #fff; text-shadow: 0 0 10px #ffcc00, 0 0 20px #ffaa00; }
+        .cold-text { color: #fff; text-shadow: 0 0 10px #00bfff, 0 0 20px #0088cc; }
+
+        /* FLAME ICON */
+        #fire-icon-emoji { font-size: 5em; margin-bottom: 10px; transition: all 0.5s ease; display: block; }
+        #flame-status-text { font-size: 2em; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+
+        .grayscale-active { filter: grayscale(100%) brightness(0.6); opacity: 0.5; transform: scale(1); }
+        .danger-active #fire-icon-emoji { filter: grayscale(0%); opacity: 1; transform: scale(1.2); animation: icon-shake 0.1s infinite; text-shadow: 0 0 20px #ffcc00, 0 0 40px #ff4500; }
+
+        @keyframes pulse-bg { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes icon-shake { 0% { transform: scale(1.2) rotate(0deg); } 25% { transform: scale(1.2) rotate(-5deg); } 50% { transform: scale(1.2) rotate(0deg); } 75% { transform: scale(1.2) rotate(5deg); } 100% { transform: scale(1.2) rotate(0deg); } }
+
+        /* --- HISTORY BUTTON --- */
+        #history-btn { position: fixed; top: 20px; right: 20px; width: 48px; height: 48px; border-radius: 50%; background-color: rgba(60, 60, 60, 0.7); cursor: pointer; z-index: 50; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+        #history-btn svg { width: 26px; height: 26px; fill: var(--text-light); }
+
+        /* --- HISTORY MODAL --- */
+        #history-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        #history-modal.active { display: flex; }
+        .history-content {
+            width: 90%; max-width: 500px; height: 70vh;
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 16px; padding: 20px;
+            display: flex; flex-direction: column;
+            box-shadow: 0 0 50px rgba(0,0,0,1);
+        }
+        .history-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px; }
+        .history-header h2 { margin: 0; font-size: 1.2em; letter-spacing: 1px; }
+        .close-history { cursor: pointer; color: #ff4500; font-weight: bold; font-size: 1.5em; }
+        
+        .history-list { flex: 1; overflow-y: auto; text-align: left; padding-right: 5px; }
+        .history-list::-webkit-scrollbar { width: 5px; }
+        .history-list::-webkit-scrollbar-thumb { background: #333; border-radius: 5px; }
+
+        .history-item {
+            background: rgba(255,255,255,0.03); border-left: 4px solid #555;
+            padding: 10px; margin-bottom: 10px; border-radius: 4px; font-size: 0.85em; line-height: 1.4;
+        }
+        .h-date { color: #888; font-size: 0.8em; display: block; margin-bottom: 4px; }
+        .h-body { font-size: 1.1em; font-weight: 500; }
+        .h-duration { color: var(--accent-blue); font-weight: bold; }
+        .type-flame { border-left-color: #ff4500; }
+        .type-gas { border-left-color: #ffcc00; }
+        .type-hot { border-left-color: #ff4500; }
+        .type-warm { border-left-color: #ffcc00; }
+        .type-cold { border-left-color: #00bfff; }
+        .clear-btn { 
+            background: #333; color: white; border: none; padding: 5px 10px; 
+            border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-top: 10px; 
+        }
+        /* --- BOTTOM NAVIGATION BAR --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background-color: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex;
+            justify-content: space-around; align-items: center; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        }
+        .nav-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none;
+            color: #888; flex: 1; height: 100%; transition: all 0.3s ease;
+        }
+        .nav-btn svg {
+            width: 24px; height: 24px; fill: #888; 
+            margin-bottom: 4px; transition: all 0.3s ease;
+        }
+        .nav-btn span { font-size: 0.75em; font-weight: 500; }
+        .nav-btn:hover, .nav-btn.active { background-color: rgba(255, 255, 255, 0.05); }
+        .nav-btn:hover svg, .nav-btn.active svg { fill: var(--accent-blue); transform: translateY(-2px); }
+        .nav-btn:hover span, .nav-btn.active span { color: var(--accent-blue); }
+    </style>
+</head>
+<body>
+
+    <div id="loader" class="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="history-btn" onclick="openHistory()">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 1 13 21a9 9 0 0 1 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+    </div>
+
+    <div id="history-modal">
+        <div class="history-content">
+            <div class="history-header">
+                <h2>EVENT HISTORY</h2>
+                <span class="close-history" onclick="closeHistory()">&times;</span>
+            </div>
+            <div id="history-list-container" class="history-list">
+                <div style="color: #666; text-align: center; margin-top: 50px;">No events detected yet.</div>
+            </div>
+            <button class="clear-btn" onclick="clearHistory()">Clear History</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        
+        <div class="status-card" id="flame-status-box">
+            <div class="status-title">FLAME STATUS</div>
+            <div id="fire-icon-emoji" class="grayscale-active">🔥</div>
+            <div id="flame-status-text" class="safe-text">CONNECTING...</div>
+        </div>
+
+        <div class="status-card" id="mq2-status-box">
+            <div class="status-title">AIR QUALITY (MQ2)</div>
+            <div class="split-content">
+                <div class="split-left">
+                    <div class="big-value" id="mq2-ppm-text">0</div>
+                    <div class="small-label">PPM Level</div>
+                </div>
+                <div class="split-right">
+                    <div class="status-text safe-text" id="mq2-status-text">SAFE</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-card chart-card-style">
+            <div class="status-title">MQ2 LIVE GRAPH</div>
+            <canvas id="mq2Chart"></canvas>
+        </div>
+
+        <div class="status-card" id="dht-status-box">
+            <div class="status-title">TEMPERATURE (DHT11)</div>
+            <div class="split-content">
+                <div class="split-left">
+                    <div class="big-value"><span id="temp-value">0</span>°C</div> 
+                    <div class="small-label">Ambient Temp</div>
+                </div>
+                <div class="split-right">
+                    <div class="status-text safe-text" id="temp-status-text">WAITING</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-card chart-card-style">
+            <div class="status-title">TEMPERATURE LIVE GRAPH</div>
+            <canvas id="tempChart"></canvas>
+        </div>
+
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="About.html" class="nav-btn">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span>About</span>
+        </a>
+
+        <a href="MAESFF.html" class="nav-btn active">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>Home</span>
+        </a>
+
+        <a href="developers.html" class="nav-btn">
+            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <span>Devs</span>
+        </a>
+    </nav>
+
+    <script>
+        let historyModal;
+        let chartInstanceMQ2; 
+        let chartInstanceTemp; 
+        const MAX_DATA_POINTS = 30;
+
+        // --- HISTORY TRACKING VARIABLES ---
+        let historyLog = [];
+        let stateFlame = false;  let startFlame = null;
+        let stateGas = false;    let startGas = null;
+        let stateTemp = 'Normal'; let startTemp = null; 
+
+        function openHistory() { document.getElementById('history-modal').classList.add('active'); renderHistory(); }
+        function closeHistory() { document.getElementById('history-modal').classList.remove('active'); }
+        
+        function clearHistory() {
+            if(confirm("Delete all history logs?")) {
+                historyLog = [];
+                localStorage.removeItem('sensorHistory');
+                renderHistory();
+            }
+        }
+
+        function saveHistory() {
+            if(historyLog.length > 50) historyLog.pop(); 
+            localStorage.setItem('sensorHistory', JSON.stringify(historyLog));
+        }
+
+        function loadHistory() {
+            const stored = localStorage.getItem('sensorHistory');
+            if(stored) historyLog = JSON.parse(stored);
+        }
+
+        function addLogEntry(type, startTime, endTime, message) {
+            const dateStr = startTime.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            const formatTime = (date) => date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            const startStr = formatTime(startTime);
+            const endStr = formatTime(endTime);
+
+            const diffMs = endTime - startTime;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffSecs = Math.floor((diffMs % 60000) / 1000);
+            const diffHrs = Math.floor(diffMins / 60);
+
+            let durationStr = "";
+            if(diffHrs > 0) durationStr += `${diffHrs} Hr `;
+            if(diffMins > 0 || diffHrs > 0) durationStr += `${diffMins % 60} Mins`;
+            if(diffHrs === 0 && diffMins === 0) durationStr = `${diffSecs} Secs`;
+
+            const entry = {
+                type: type,
+                date: dateStr,
+                timeRange: `${startStr} - ${endStr}`,
+                msg: message,
+                duration: durationStr,
+                timestamp: Date.now() 
+            };
+
+            historyLog.unshift(entry);
+            saveHistory();
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-list-container');
+            if(historyLog.length === 0) {
+                container.innerHTML = '<div style="color: #666; text-align: center; margin-top: 50px;">No events detected yet.</div>';
+                return;
+            }
+
+            let html = '';
+            historyLog.forEach(item => {
+                let borderClass = 'type-cold';
+                if(item.type === 'Flame') borderClass = 'type-flame';
+                if(item.type === 'Gas') borderClass = 'type-gas';
+                if(item.type === 'Hot') borderClass = 'type-hot';
+                if(item.type === 'Warm') borderClass = 'type-warm';
+
+                html += `
+                <div class="history-item ${borderClass}">
+                    <span class="h-date">${item.date} | ${item.timeRange}</span>
+                    <div class="h-body">${item.msg}</div>
+                    <div class="h-duration">(${item.duration})</div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // --- CHART SETUP ---
+        function initCharts() {
+            const commonOptions = {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false, grid: { display: false } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#888' } }
+                },
+                animation: { duration: 0 }
+            };
+
+            const ctx1 = document.getElementById('mq2Chart').getContext('2d');
+            let grad1 = ctx1.createLinearGradient(0, 0, 0, 400);
+            grad1.addColorStop(0, 'rgba(255, 204, 0, 0.5)'); grad1.addColorStop(1, 'rgba(255, 204, 0, 0.0)');
+
+            chartInstanceMQ2 = new Chart(ctx1, {
+                type: 'line',
+                data: { labels: [], datasets: [{ data: [], borderColor: '#ffcc00', backgroundColor: grad1, borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4 }] },
+                options: commonOptions
+            });
+
+            const ctx2 = document.getElementById('tempChart').getContext('2d');
+            let grad2 = ctx2.createLinearGradient(0, 0, 0, 400);
+            grad2.addColorStop(0, 'rgba(0, 191, 255, 0.5)'); grad2.addColorStop(1, 'rgba(0, 191, 255, 0.0)');
+
+            chartInstanceTemp = new Chart(ctx2, {
+                type: 'line',
+                data: { labels: [], datasets: [{ data: [], borderColor: '#00bfff', backgroundColor: grad2, borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4 }] },
+                options: commonOptions
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loader = document.getElementById('loader');
+
+            loadHistory(); 
+            const flameText = document.getElementById('flame-status-text');
+            const flameBox = document.getElementById('flame-status-box');
+            const fireIcon = document.getElementById('fire-icon-emoji');
+            
+            const mq2PpmText = document.getElementById('mq2-ppm-text');
+            const mq2StatusText = document.getElementById('mq2-status-text');
+            const mq2Box = document.getElementById('mq2-status-box');
+
+            const tempValText = document.getElementById('temp-value');
+            const tempStatusText = document.getElementById('temp-status-text');
+            const tempBox = document.getElementById('dht-status-box');
+
+            initCharts();
+            setTimeout(() => { if(loader) loader.classList.add('hidden'); }, 500);
+
+            function updateSensorData() {
+                fetch('http://192.168.4.1/data') 
+                    .then(response => { if (!response.ok) throw new Error(`${response.status}`); return response.json(); })
+                    .then(data => {
+                        const now = new Date();
+                        const timeStr = now.toLocaleTimeString();
+
+                        // --- 1. FLAME LOGIC ---
+                        if (data.flame === 1) {
+                            flameText.innerText = "FIRE DETECTED";
+                            flameText.className = "danger-text";
+                            flameBox.className = "status-card danger-active";
+                            fireIcon.classList.remove('grayscale-active');
+                            
+                            if (!stateFlame) { stateFlame = true; startFlame = new Date(); }
+                        } else {
+                            flameText.innerText = "SAFE";
+                            flameText.className = "safe-text";
+                            flameBox.className = "status-card";
+                            fireIcon.classList.add('grayscale-active');
+
+                            if (stateFlame) {
+                                stateFlame = false;
+                                addLogEntry('Flame', startFlame, new Date(), "🔴 Flame Detected — Alert Triggered");
+                            }
+                        }
+
+                        // --- 2. MQ2 LOGIC ---
+                        const mq2Val = data.mq2_analog;
+                        mq2PpmText.innerText = mq2Val;
+                        
+                        if (mq2Val > 400) {
+                            mq2StatusText.innerText = "GAS DETECTED";
+                            mq2StatusText.className = "status-text warning-text";
+                            mq2Box.className = "status-card warning-active";
+
+                            if (!stateGas) { stateGas = true; startGas = new Date(); }
+                        } else {
+                            mq2StatusText.innerText = "SAFE";
+                            mq2StatusText.className = "status-text safe-text";
+                            mq2Box.className = "status-card";
+
+                            if (stateGas) {
+                                stateGas = false;
+                                addLogEntry('Gas', startGas, new Date(), "🔴 Gas Detected — Alert Triggered");
+                            }
+                        }
+                        
+                        if (chartInstanceMQ2) {
+                            chartInstanceMQ2.data.labels.push(timeStr);
+                            chartInstanceMQ2.data.datasets[0].data.push(mq2Val);
+                            if (chartInstanceMQ2.data.labels.length > MAX_DATA_POINTS) {
+                                chartInstanceMQ2.data.labels.shift();
+                                chartInstanceMQ2.data.datasets[0].data.shift();
+                            }
+                            chartInstanceMQ2.update();
+                        }
+
+                        // --- 3. TEMPERATURE LOGIC ---
+                        const tempVal = data.temp;
+                        tempValText.innerText = tempVal.toFixed(1);
+                        tempBox.className = "status-card"; 
+                        
+                        let currentCategory = 'Normal'; 
+                        
+                        if (tempVal < 30) {
+                            tempStatusText.innerText = "COLD";
+                            tempStatusText.className = "status-text cold-text";
+                            tempBox.classList.add("cold-active");
+                            currentCategory = 'Cold';
+                        } else if (tempVal >= 30 && tempVal <= 33) {
+                            tempStatusText.innerText = "WARM";
+                            tempStatusText.className = "status-text warning-text";
+                            tempBox.classList.add("warning-active");
+                            currentCategory = 'Warm';
+                        } else {
+                            tempStatusText.innerText = "HOT";
+                            tempStatusText.className = "status-text danger-text";
+                            tempBox.classList.add("danger-active");
+                            currentCategory = 'Hot';
+                        }
+
+                        if (currentCategory !== stateTemp) {
+                            if (stateTemp !== 'Normal' && startTemp !== null) {
+                                let icon = '🟢';
+                                if(stateTemp === 'Hot') icon = '🔴';
+                                if(stateTemp === 'Cold') icon = '🔵';
+                                addLogEntry(stateTemp, startTemp, new Date(), `${icon} ${stateTemp} Temp Detected`);
+                            }
+                            stateTemp = currentCategory;
+                            startTemp = new Date();
+                        }
+                        if (chartInstanceTemp) {
+                            chartInstanceTemp.data.labels.push(timeStr);
+                            chartInstanceTemp.data.datasets[0].data.push(tempVal);
+                            if (chartInstanceTemp.data.labels.length > MAX_DATA_POINTS) {
+                                chartInstanceTemp.data.labels.shift();
+                                chartInstanceTemp.data.datasets[0].data.shift();
+                            }
+                            chartInstanceTemp.update();
+                        }
+                    })
+                    .catch(error => console.log('Fetch Error:', error));
+            }
+            
+            setInterval(updateSensorData, 10);
+            updateSensorData();
+        });
+        window.addEventListener('load', () => {
+            if (loader) {
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                }, 400);
+            }
+        });
+    </script>
+</body>
+</html>

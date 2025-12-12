@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Devs - ESP32 Web Server</title>
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
+    <style>
+        :root {
+            --bg-dark: #0d0d0d; 
+            --bg-medium: #1a1a1a; 
+            --card-bg: rgba(30, 30, 30, 0.7); 
+            --text-light: #e0e0e0;
+            --accent-blue: #00bfff; 
+            --accent-danger: #ff4500; 
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --border-radius: 12px; 
+            --glow-shadow: 0 0 10px rgba(0, 191, 255, 0.3); 
+            --strong-glow: 0 0 20px rgba(0, 191, 255, 0.5);
+            --vscode-color: #007acc; 
+            --arduino-color: #00979d; 
+            --accent-black: #000;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0;
+            background-color: var(--bg-dark); 
+            color: var(--text-light); 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            min-height: 100vh; 
+            text-align: center; 
+            padding-top: 20px; 
+            padding-bottom: 80px;
+            background-image: radial-gradient(circle at top, var(--bg-medium) 1%, var(--bg-dark) 80%); 
+            overflow-x: hidden; 
+            user-select: none;
+        }
+
+        h2 {
+            font-size: 3em; font-weight: 800;
+            color: var(--text-light); margin-bottom: 40px; margin-top: 30px; letter-spacing: 2px;
+            background-image: linear-gradient(90deg, #f0f0f0, var(--accent-blue)); -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; transition: transform 0.3s ease;
+        }
+        h2:hover {
+            transform: translateY(-2px);
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.6), 0 0 20px var(--accent-blue), 0 0 40px rgb(29, 29, 29);
+        }
+
+        /* CAROUSEL */
+        .carousel-scene {
+            margin: 20px auto 60px auto;
+            position: relative; width: 260px; height: 360px;
+            perspective: 1000px; cursor: grab; touch-action: none;
+        }
+        .carousel-scene:active { cursor: grabbing; }
+        .carousel {
+            width: 100%; height: 100%; position: absolute; 
+            transform-style: preserve-3d; transition: transform 0.5s; 
+        }
+        .carousel-card {
+            position: absolute; width: 260px; height: 360px; left: 0px; top: 0px;
+            cursor: pointer; perspective: 1000px; -webkit-user-drag: none;
+        }
+        .carousel-card:nth-child(1) { transform: rotateY(0deg) translateZ(250px); }
+        .carousel-card:nth-child(2) { transform: rotateY(90deg) translateZ(250px); }
+        .carousel-card:nth-child(3) { transform: rotateY(180deg) translateZ(250px); }
+        .carousel-card:nth-child(4) { transform: rotateY(270deg) translateZ(250px); }
+
+        .card-inner {
+            position: relative; 
+            width: 100%; 
+            height: 100%; 
+            text-align: center; 
+            transition: transform 0.8s;
+            transform-style: preserve-3d; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-radius: 12px; pointer-events: none; 
+        }
+        .card-face { 
+            pointer-events: auto; position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; 
+            backface-visibility: hidden; border-radius: 12px; display: flex; flex-direction: column; justify-content: center;
+            align-items: center; padding: 20px; box-sizing: border-box; background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px); border: 1px solid rgba(0, 153, 255, 0.3); box-shadow: 0 0 15px rgba(0, 191, 255, 0.1);
+        }
+        .carousel-card.flipped .card-inner { transform: rotateY(180deg); }
+        .card-front { background: linear-gradient(145deg, rgba(40,40,40,0.9) 0%, rgba(20,20,20,0.9) 100%); }
+        .card-front img {
+            width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-bottom: 25px;
+            border: 3px solid var(--accent-blue); box-shadow: 0 0 20px rgba(0, 191, 255, 0.2); pointer-events: none;
+        }
+        .card-front h3 { font-size: 1.2em; color: var(--accent-blue); margin: 0 0 10px 0; letter-spacing: 0.5px; }
+        .card-front p { color: #aaa; font-style: italic; margin: 0; }
+        .click-hint { font-size: 0.75em; color: #666; margin-top: 20px; opacity: 0.8; }
+        .card-back {
+            background: linear-gradient(145deg, rgba(20,20,20,0.9) 0%, rgba(40,40,40,0.9) 100%);
+            transform: rotateY(180deg); justify-content: center;
+        }
+        .upload-btn {
+            background: transparent; border: 1px solid var(--accent-blue); color: var(--accent-blue); padding: 10px 20px;
+            border-radius: 20px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; display: flex;
+            align-items: center; gap: 8px; position: relative; overflow: hidden;
+        }
+        .upload-btn:hover { background: var(--accent-blue); color: white; box-shadow: 0 0 15px var(--accent-blue); }
+        .upload-btn input[type="file"] { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .drag-instruction {
+            text-align: center; font-size: 0.8em; color: #666; margin-top: -30px; margin-bottom: 50px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .drag-instruction svg { fill: #666; width: 20px; height: 20px; }
+
+        .dev-tools { display: flex; justify-content: center; align-items: center; gap: 40px; margin-bottom: 40px; }
+        .tool-icon { width: 60px; height: 60px; cursor: pointer; transition: transform 0.3s ease, filter 0.3s ease; border-radius: 8px; object-fit: contain; }
+        .tool-icon:hover { transform: scale(1.15) rotate(-5deg); }
+        #vscode-icon { filter: drop-shadow(0 0 10px var(--vscode-color)) drop-shadow(0 0 5px rgba(0, 0, 0, 0.5)); }
+        #arduino-icon { filter: drop-shadow(0 0 10px var(--arduino-color)) drop-shadow(0 0 5px rgba(0, 0, 0, 0.5)); }
+        .download-box {
+            background-color: var(--card-bg); border-radius: var(--border-radius); padding: 20px; margin: 20px auto 40px auto;
+            max-width: 600px; box-shadow: var(--card-shadow), var(--strong-glow); border: 1px solid var(--accent-blue);
+            opacity: 0; height: 0; overflow: hidden; transition: opacity 0.5s ease, height 0.5s ease, padding 0.5s ease, margin 0.5s ease;
+        }
+        .download-box.show { opacity: 1; height: auto; padding: 20px; margin: 20px auto 40px auto; }
+        .download-box h3 { color: var(--accent-blue); margin-bottom: 15px; }
+        .download-link {
+            display: inline-block; padding: 10px 20px; margin: 5px; background-color: var(--accent-blue); color: var(--text-light);
+            text-decoration: none; border-radius: 6px; font-weight: bold; transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+        }
+        .download-link:hover { background-color: #00bfff; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 153, 255, 0.7); }
+        .content-wrapper { padding-top: 20px; max-width: 1200px; width: 90%; margin: 0 auto; }
+
+        /* CROP MODAL */
+        #crop-modal {
+            display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.95); backdrop-filter: blur(8px); align-items: center; justify-content: center; flex-direction: column;
+        }
+        #crop-modal.visible { display: flex; }
+        .crop-container {
+            max-width: 80%; max-height: 60%; border: 2px solid var(--accent-blue); box-shadow: 0 0 30px rgba(0, 191, 255, 0.3);
+            background: #111; margin-bottom: 20px;
+        }
+        .crop-container img { max-width: 100%; display: block; }
+        .crop-actions { display: flex; gap: 20px; }
+        .crop-btn {
+            padding: 10px 30px; border: none; border-radius: 25px; font-size: 1em; font-weight: bold; cursor: pointer; transition: all 0.3s;
+        }
+        .btn-save { background-color: var(--accent-blue); color: white; box-shadow: 0 0 10px var(--accent-blue); }
+        .btn-save:hover { transform: scale(1.05); background-color: #0099cc; }
+        .btn-cancel { background-color: transparent; border: 2px solid #ff4500; color: #ff4500; }
+        .btn-cancel:hover { background-color: #ff4500; color: white; }
+
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background-color: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-around;
+            align-items: center; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        }       
+        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: #888; flex: 1; height: 100%; transition: all 0.3s ease; }
+        .nav-btn svg { width: 24px; height: 24px; fill: #888; margin-bottom: 4px; transition: all 0.3s ease; }
+        .nav-btn span { font-size: 0.75em; font-weight: 500; }
+        .nav-btn:hover, .nav-btn.active { background-color: rgba(255, 255, 255, 0.05); }
+        .nav-btn:hover svg, .nav-btn.active svg { fill: var(--accent-blue); transform: translateY(-2px); }
+        .nav-btn:hover span, .nav-btn.active span { color: var(--accent-blue); }
+        
+        @media screen and (max-width: 768px) {
+            .carousel-scene { width: 220px; height: 320px; }
+            .carousel-card { width: 220px; height: 320px; }
+            .carousel-card:nth-child(1) { transform: rotateY(0deg) translateZ(200px); }
+            .carousel-card:nth-child(2) { transform: rotateY(90deg) translateZ(200px); }
+            .carousel-card:nth-child(3) { transform: rotateY(180deg) translateZ(200px); }
+            .carousel-card:nth-child(4) { transform: rotateY(270deg) translateZ(200px); }
+            .crop-container { max-width: 90%; max-height: 50%; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loader" class="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="content-wrapper">
+        <h2>GROUP 3</h2>
+
+        <div class="carousel-scene">
+            <div class="carousel">
+                <div class="carousel-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-face card-front">
+                            <img id="img-member-1" src="" alt="Aguirre, Kenneth">
+                            <h3>Aguirre, Kenneth D.</h3>
+                            <p>Team Member</p>
+                            <div class="click-hint">Tap to Flip</div>
+                        </div>
+                        <div class="card-face card-back">
+                            <label class="upload-btn" onclick="event.stopPropagation()">
+                                <input type="file" accept="image/*" onchange="initCrop(event, this)">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                                Upload Photo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-face card-front">
+                            <img id="img-member-2" src="" alt="Patricio, Mark">
+                            <h3>Patricio, Mark Daniel P.</h3>
+                            <p>Team Member</p>
+                            <div class="click-hint">Tap to Flip</div>
+                        </div>
+                        <div class="card-face card-back">
+                            <label class="upload-btn" onclick="event.stopPropagation()">
+                                <input type="file" accept="image/*" onchange="initCrop(event, this)">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                                Upload Photo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-face card-front">
+                            <img id="img-member-3" src="" alt="Reyes, Rafael">
+                            <h3>Reyes, Rafael Jeremiel U.</h3>
+                            <p>Team Member</p>
+                            <div class="click-hint">Tap to Flip</div>
+                        </div>
+                        <div class="card-face card-back">
+                            <label class="upload-btn" onclick="event.stopPropagation()">
+                                <input type="file" accept="image/*" onchange="initCrop(event, this)">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                                Upload Photo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-face card-front">
+                            <img id="img-member-4" src="" alt="Marasigan, Lorea">
+                            <h3>Marasigan, Lorea</h3>
+                            <p>Team Member</p>
+                            <div class="click-hint">Tap to Flip</div>
+                        </div>
+                        <div class="card-face card-back">
+                            <label class="upload-btn" onclick="event.stopPropagation()">
+                                <input type="file" accept="image/*" onchange="initCrop(event, this)">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                                Upload Photo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="drag-instruction">
+            <svg viewBox="0 0 24 24"><path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.09-.34-.14-.54-.14H13V7.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V13l-3.91-.84c-.11-.02-.22-.02-.33 0-.31.04-.59.23-.7.54l-.45 1.19 4.77 4.77c.41.41 1.63 1.34 3.12 1.34h5c.55 0 1-.45 1-1v-5.5c0-.36-.2-.67-.5-.87z"/></svg>
+            Swipe or Drag to Rotate
+        </div>
+
+        <div class="dev-tools">
+            <img id="vscode-icon" class="tool-icon" src="VSCode.webp" alt="Visual Studio Code Icon" onclick="showDownloadLinks('vscode')">
+            <img id="arduino-icon" class="tool-icon" src="Arduino.webp" alt="Arduino IDE Icon" onclick="showDownloadLinks('arduino')">
+        </div>
+        
+        <div id="download-box" class="download-box"></div>
+        
+        <div id="crop-modal">
+            <div class="crop-container">
+                <img id="image-to-crop" src="" alt="Crop Preview">
+            </div>
+            <div class="crop-actions">
+                <button class="crop-btn btn-cancel" onclick="cancelCrop()">Cancel</button>
+                <button class="crop-btn btn-save" onclick="saveCrop()">Save & Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="About.html" class="nav-btn">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span>About</span>
+        </a>
+
+        <a href="MAESFF.html" class="nav-btn">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>Home</span>
+        </a>
+
+        <a href="developers.html" class="nav-btn active">
+            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <span>Devs</span>
+        </a>
+    </nav>
+
+    <script src="all.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script>
+        const scene = document.querySelector('.carousel-scene');
+        const carousel = document.querySelector('.carousel');
+        let currentAngle = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startAngle = 0;
+        let dragDifference = 0;
+
+        function handleDragStart(e) {
+            isDragging = true;
+            startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            startAngle = currentAngle;
+            carousel.style.transition = 'none';
+            scene.style.cursor = 'grabbing';
+            dragDifference = 0;
+        }
+        function handleDragMove(e) {
+            if (!isDragging) return;
+            e.preventDefault(); 
+            const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const deltaX = currentX - startX;
+            dragDifference = deltaX;
+            const sensitivity = 0.5; 
+            currentAngle = startAngle + (deltaX * sensitivity);
+            updateCarousel();
+        }
+        function handleDragEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            scene.style.cursor = 'grab';
+            carousel.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.3, 1)';
+            const snapAngle = Math.round(currentAngle / 90) * 90;
+            currentAngle = snapAngle;
+            updateCarousel();
+            if (Math.abs(dragDifference) > 10) {
+                 const allCards = document.querySelectorAll('.carousel-card');
+                 allCards.forEach(card => card.classList.remove('flipped'));
+            }
+        }
+        function updateCarousel() {
+            const zOffset = window.innerWidth < 768 ? 200 : 250;
+            carousel.style.transform = `translateZ(-${zOffset}px) rotateY(${currentAngle}deg)`;
+        }
+        function flipCard(element) {
+            if (Math.abs(dragDifference) > 5) return;
+            element.classList.toggle('flipped');
+        }
+
+        scene.addEventListener('mousedown', handleDragStart);
+        scene.addEventListener('touchstart', handleDragStart);
+        window.addEventListener('mousemove', handleDragMove);
+        window.addEventListener('touchmove', handleDragMove);
+        window.addEventListener('mouseup', handleDragEnd);
+        window.addEventListener('touchend', handleDragEnd);
+        updateCarousel();
+        window.addEventListener('resize', updateCarousel);
+
+        let cropper; 
+        let currentTargetImg; 
+        let currentInput; 
+        let currentImgId;
+
+        function initCrop(event, inputElement) {
+            event.stopPropagation(); 
+            const file = inputElement.files[0];
+            if (file) {
+                currentInput = inputElement;
+                const cardInner = inputElement.closest('.card-inner');
+                currentTargetImg = cardInner.querySelector('.card-front img');
+                currentImgId = currentTargetImg.id;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageToCrop = document.getElementById('image-to-crop');
+                    imageToCrop.src = e.target.result;
+                    document.getElementById('crop-modal').classList.add('visible');
+                    
+                    if (cropper) { cropper.destroy(); }
+                    cropper = new Cropper(imageToCrop, {
+                        aspectRatio: 1, 
+                        viewMode: 2,
+                    });
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveCrop() {
+            if (cropper && currentTargetImg) {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 300,
+                    height: 300,
+                });
+                const imageData = canvas.toDataURL();
+                currentTargetImg.src = imageData;
+                try {
+                    localStorage.setItem('saved_' + currentImgId, imageData);
+                } catch (e) {
+                    alert("Image too large to save permanently on this device.");
+                }
+
+                closeCropModal();
+            }
+        }
+        function cancelCrop() {
+            closeCropModal();
+            if (currentInput) currentInput.value = '';
+        }
+        function closeCropModal() {
+            document.getElementById('crop-modal').classList.remove('visible');
+            if (cropper) { cropper.destroy(); cropper = null; }
+        }
+        window.addEventListener('load', () => {
+             const memberImages = document.querySelectorAll('img[id^="img-member-"]');
+             memberImages.forEach(img => {
+                 const savedData = localStorage.getItem('saved_' + img.id);
+                 if (savedData) {
+                     img.src = savedData;
+                 }
+             });
+        });
+
+        function showDownloadLinks(type) {
+             const box = document.getElementById('download-box');
+             box.innerHTML = ''; 
+             box.classList.remove('show');
+             setTimeout(() => {
+                 if (type === 'vscode') {
+                     box.innerHTML = `<h3>Visual Studio Code</h3><a href="#" class="download-link">Download for Windows</a><a href="#" class="download-link">Download for Mac</a><a href="#" class="download-link">Download for Linux</a>`;
+                 } else if (type === 'arduino') {
+                     box.innerHTML = `<h3>Arduino IDE</h3><a href="#" class="download-link">Download for Windows</a><a href="#" class="download-link">Download for Mac</a><a href="#" class="download-link">Download for Linux</a>`;
+                 }
+                 box.classList.add('show');
+             }, 300);
+        }
+    </script>
+</body>
+</html>

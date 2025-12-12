@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>About - IoT Fire Monitoring System</title>
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="all.css">
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-medium: #1a1a1a;
+            --card-bg: rgba(30, 30, 30, 0.7);
+            --text-light: #e0e0e0;
+            --accent-blue: #00bfff;
+            --accent-danger: #ff4500;
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --border-radius: 12px;
+            --glow-shadow: 0 0 10px rgba(0, 191, 255, 0.3);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            padding-bottom: 80px; 
+            background-image: radial-gradient(circle at top, var(--bg-medium) 1%, var(--bg-dark) 80%);
+            overflow-x: hidden; 
+            user-select: none; 
+        }
+        .main-container {
+            width: 95%; max-width: 900px; padding: 30px;
+            background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--card-shadow);
+            margin-top: 40px; margin-bottom: 20px; text-align: left; box-sizing: border-box; position: relative;
+        }
+        .main-container h2 {
+            font-size: 1.6em; font-weight: 600; color: var(--text-light); margin-top: 30px; margin-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1); padding-bottom: 5px; letter-spacing: 0.5px;
+        }
+        .main-container p { line-height: 1.6; margin-bottom: 18px; font-weight: 300; font-size: 1.05em; }
+        .image-container {
+            display: flex; flex-direction: column; align-items: center;
+            margin: 20px 0; position: relative;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .image-container p {
+            font-style: italic; font-size: 0.9em;
+            color: var(--accent-blue); 
+            margin-bottom: 15px;
+            border-bottom: 1px dashed rgba(0, 153, 255, 0.3);
+            padding-bottom: 5px;
+        }
+        
+        /* Updated Image Styles */
+        .image-container img.zoomable {
+            max-width: 100%; height: auto; border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .image-container img.zoomable:active {
+            transform: scale(0.98);
+        }
+
+        .download-btn {
+            position: absolute; top: 15px; right: 15px;
+            background-color: rgba(0, 0, 0, 0.7); padding: 8px;
+            border-radius: 50%; text-decoration: none; display: block; /* Always visible or use hover logic */
+            z-index: 30; transition: background 0.3s;
+        }
+        .download-btn:hover { background-color: var(--accent-blue); }
+        .download-btn svg { width: 20px; height: 20px; fill: var(--text-light); }
+        
+        .description-box {
+            background-color: rgba(30, 30, 30, 0.95); 
+            padding: 15px;
+            width: 100%; 
+            border-radius: 8px; 
+            margin-top: 20px;
+            border: 1px solid rgba(0, 153, 255, 0.2); 
+            box-shadow: 0 3px 15px rgba(0,0,0,0.5), var(--glow-shadow); 
+            box-sizing: border-box;
+            position: relative;
+            transition: box-shadow 0.3s ease;
+        }
+        .description-box:hover { box-shadow: 0 3px 20px rgba(0,0,0,0.7), 0 0 15px var(--accent-blue); }
+        .description-box h2 {
+            margin-top: 0;  font-size: 1.2em;  font-weight: 600;
+            border-bottom: none;  padding-bottom: 0;  display: inline-block; color: var(--accent-blue);
+        }
+        .toggle-btn {
+            position: absolute; top: 15px;  right: 15px; background: none; border: none;  cursor: pointer;  padding: 0;
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; background-color: transparent;
+            transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), background 0.3s;
+        }
+        .toggle-btn:hover { background-color: rgba(0, 153, 255, 0.2); }
+        .toggle-btn svg { 
+            width: 20px;  height: 20px; 
+            fill: var(--text-light);  transition: fill 0.3s;
+        }
+        .toggle-btn:hover svg { fill: var(--accent-blue); }
+        .description-content {
+            margin-top: 8px;  text-align: left;  line-height: 1.5;
+            font-size: 0.95em; max-height: 0;  overflow: hidden;  opacity: 0; padding-top: 0;
+            transition: max-height 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s ease-out 0.1s; 
+            
+        }
+        .description-content.open {
+            max-height: 800px;  opacity: 1;  padding-top: 10px;
+            transition: max-height 0.8s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.5s ease-in;
+        }
+        .description-content h3 { 
+            font-size: 1.1em;  margin: 15px 0 5px 0;  color: var(--accent-blue); 
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1); padding-bottom: 3px; 
+        }
+        .description-content h4 { font-size: 1em;  margin: 10px 0 5px 0;  color: var(--text-light); }
+        .description-content ul { margin: 5px 0 15px 25px; list-style-type: none; padding: 0; }
+        .description-content ul li {  margin-bottom: 6px;  padding-left: 15px; position: relative; font-weight: 300; }
+        .description-content ul li::before {
+            content: '•'; color: var(--accent-blue); 
+            font-weight: bold;  display: inline-block;  width: 1em; margin-left: -1em;
+        }
+        .carousel-scene {
+            margin: 40px auto; position: relative; width: 260px;
+            height: 360px; perspective: 1000px; cursor: grab; touch-action: none;
+        }
+        .carousel-scene:active { cursor: grabbing; }
+        .carousel {
+            width: 100%; height: 100%; position: absolute;
+            transform-style: preserve-3d; transition: transform 0.5s; 
+        }
+        .carousel-card {
+            position: absolute; width: 260px; height: 360px; left: 0px;
+            top: 0px; cursor: pointer; perspective: 1000px; -webkit-user-drag: none;
+        }
+
+        .carousel-card:nth-child(1) { transform: rotateY(0deg) translateZ(320px); }
+        .carousel-card:nth-child(2) { transform: rotateY(60deg) translateZ(320px); }
+        .carousel-card:nth-child(3) { transform: rotateY(120deg) translateZ(320px); }
+        .carousel-card:nth-child(4) { transform: rotateY(180deg) translateZ(320px); }
+        .carousel-card:nth-child(5) { transform: rotateY(240deg) translateZ(320px); }
+        .carousel-card:nth-child(6) { transform: rotateY(300deg) translateZ(320px); }
+
+        .card-inner {
+            position: relative; width: 100%; height: 100%; text-align: center;
+            transition: transform 0.8s; transform-style: preserve-3d;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border-radius: 12px; pointer-events: none;
+        }
+        .card-face { pointer-events: auto; }
+        .carousel-card.flipped .card-inner { transform: rotateY(180deg); }
+        .card-face {
+            position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; 
+            backface-visibility: hidden; border-radius: 12px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;
+            background: rgba(30, 30, 30, 0.9); border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .card-front {
+            background: linear-gradient(145deg, rgba(40,40,40,1) 0%, rgba(20,20,20,1) 100%);
+            border-bottom: 4px solid var(--accent-blue); 
+        }
+        .card-front img {
+            width: 140px; height: auto; max-height: 160px; object-fit: contain; margin-bottom: 20px;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+            transition: transform 0.3s ease; pointer-events: none;
+        }
+        .carousel-card:hover .card-front img { transform: scale(1.1); }
+        .card-front h3 { font-size: 1.4em; color: var(--accent-blue); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        .card-front .click-hint { font-size: 0.8em; color: #888; margin-top: 15px; opacity: 0.7; }
+        .card-back {
+            background: linear-gradient(145deg, rgba(20,20,20,1) 0%, rgba(40,40,40,1) 100%); transform: rotateY(180deg);
+            align-items: flex-start;  text-align: left; border-top: 4px solid var(--accent-blue);
+        }
+        .card-back h3 {
+            font-size: 1.1em; color: var(--accent-blue); width: 100%;
+            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-top: 0;
+        }
+        .card-back ul { padding-left: 0; margin: 10px 0; list-style: none; width: 100%; }
+        .card-back li { font-size: 0.9em; margin-bottom: 8px; line-height: 1.4; color: #ccc; }
+        .card-back li strong { color: white; }
+
+        .card-face.esp32 { border-color: #007bff; }
+        .card-face.esp32 h3 { color: #007bff; }
+        .card-face.flame { border-color: #ff4500; }
+        .card-face.flame h3 { color: #ff4500; }
+        .card-face.mq2 { border-color: #ffb700; }
+        .card-face.mq2 h3 { color: #ffb700; }
+        .card-face.dht { border-color: #28a745; }
+        .card-face.dht h3 { color: #28a745; }
+        .card-face.led { border-color: #6a0dad; }
+        .card-face.led h3 { color: #6a0dad; }
+        .card-face.buzzer { border-color: #777777; }
+        .card-face.buzzer h3 { color: #aaaaaa; }
+        .drag-instruction {
+            text-align: center; font-size: 0.8em; color: #666; margin-top: 20px; 
+            margin-bottom: 30px; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .drag-instruction svg { fill: #666; width: 20px; height: 20px; }
+        .hardware-box {
+            display: flex; align-items: center; gap: 20px;
+            background-color: rgba(30, 30, 30, 0.7); color: var(--text-light);
+            padding: 20px; border-radius: 8px; margin: 20px auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            border: 1px solid transparent; 
+            border-left: 5px solid;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+        }
+        .hardware-box:hover {
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6); border-color: rgba(255, 255, 255, 0.1);
+        }
+        .user-guide-table {
+            width: 100%; border-collapse: collapse; margin-top: 15px;  overflow: hidden; 
+            background: rgba(40, 40, 40, 0.9); border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 10px rgba(0, 153, 255, 0.1);
+        }
+        .user-guide-table thead { border-bottom: 2px solid var(--accent-blue); }
+        .user-guide-table th {
+            background: var(--accent-blue); padding: 16px 14px;
+            text-align: left; font-weight: 700; font-size: 1.05em;
+            color: var(--text-light); white-space: nowrap; letter-spacing: 0.5px;
+        }
+        .user-guide-table td {
+            padding: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95em; transition: background 0.25s ease; vertical-align: top;
+        }
+        .user-guide-table tr:hover td { background: rgba(0, 153, 255, 0.05); }
+        .user-guide-table td[data-label="Status"] { font-weight: bold; }
+        .user-guide-table tr:last-child td { border-bottom: none; }
+        .bottom-nav {
+            position: fixed; bottom: 0;
+            left: 0; width: 100%; height: 65px;
+            background-color: rgba(15, 15, 15, 0.95); backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; justify-content: space-around; align-items: center; z-index: 1000; 
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        }
+        .nav-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-decoration: none; color: #888; flex: 1; height: 100%; transition: all 0.3s ease;
+        }
+        .nav-btn svg { width: 24px; height: 24px; fill: #888; margin-bottom: 4px; transition: all 0.3s ease; }
+        .nav-btn span { font-size: 0.75em; font-weight: 500; }
+        .nav-btn:hover, .nav-btn.active { background-color: rgba(255, 255, 255, 0.05); }
+        .nav-btn:hover svg, .nav-btn.active svg { fill: var(--accent-blue); transform: translateY(-2px); } 
+        .nav-btn:hover span, .nav-btn.active span {color: var(--accent-blue); }
+
+        /* --- NEW ZOOM MODAL STYLES --- */
+        .zoom-modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 10000; /* Sit on top of everything */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Prevent scrolling outside */
+            background-color: rgba(0, 0, 0, 0.95); /* Dark black background */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            touch-action: none; /* Important for preventing browser zoom interference */
+        }
+
+        .zoom-modal img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.1s linear; /* Smooth movement */
+            cursor: grab;
+            transform-origin: center center;
+        }
+
+        .zoom-modal .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+            z-index: 10001;
+            user-select: none;
+        }
+
+        .zoom-modal .close-btn:hover,
+        .zoom-modal .close-btn:focus {
+            color: var(--accent-blue);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .zoom-instruction {
+            position: absolute;
+            bottom: 20px;
+            color: #888;
+            font-size: 0.9em;
+            pointer-events: none;
+        }
+
+
+        @media screen and (max-width: 768px) {
+            h1 { font-size: 1.8em; margin-top: 10px; }
+            .main-container h2 { font-size: 1.5em; margin-top: 25px; }
+            .description-box h2 { margin-top: -100px; font-size: 1em; }
+            .main-container p, .description-content p { font-size: 0.95em; }
+            .main-container { padding: 15px; margin-top: 20px; }
+            .hardware-box { flex-direction: row; align-items: center; text-align: left; padding: 15px; }
+
+            .carousel-scene { width: 220px; height: 320px; }
+            .carousel-card { width: 220px; height: 320px; }
+            .carousel-card:nth-child(1) { transform: rotateY(0deg) translateZ(200px); }
+            .carousel-card:nth-child(2) { transform: rotateY(60deg) translateZ(200px); }
+            .carousel-card:nth-child(3) { transform: rotateY(120deg) translateZ(200px); }
+            .carousel-card:nth-child(4) { transform: rotateY(180deg) translateZ(200px); }
+            .carousel-card:nth-child(5) { transform: rotateY(240deg) translateZ(200px); }
+            .carousel-card:nth-child(6) { transform: rotateY(300deg) translateZ(200px); }
+        }
+        @media screen and (max-width: 600px) {
+            .user-guide-table, .user-guide-table tbody, .user-guide-table tr, .user-guide-table td {
+                display: block; width: 100%;
+            }
+            .user-guide-table thead { display: none; }
+            .user-guide-table tr { margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; }
+            .user-guide-table td {
+                text-align: left; padding-left: 120px; position: relative;
+                border-bottom: 1px dotted rgba(255, 255, 255, 0.15); min-height: 40px; box-sizing: border-box;
+            }
+            .user-guide-table td:before {
+                content: attr(data-label); position: absolute; left: 10px; width: 100px;
+                padding-right: 10px; white-space: nowrap; font-weight: 700; color: var(--accent-blue);
+            }
+            .user-guide-table tr:last-child td { border-bottom: none; }
+            .main-container { width: 100%; border-radius: 0; box-shadow: none; }
+
+            .carousel-scene { width: 180px; height: 280px; }
+            .carousel-card { width: 180px; height: 280px; }
+            .carousel-card:nth-child(1) { transform: rotateY(0deg) translateZ(200px); }
+            .carousel-card:nth-child(2) { transform: rotateY(60deg) translateZ(200px); }
+            .carousel-card:nth-child(3) { transform: rotateY(120deg) translateZ(200px); }
+            .carousel-card:nth-child(4) { transform: rotateY(180deg) translateZ(200px); }
+            .carousel-card:nth-child(5) { transform: rotateY(240deg) translateZ(200px); }
+            .carousel-card:nth-child(6) { transform: rotateY(300deg) translateZ(200px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="loader" class="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="main-container">
+        <h1>IOT-BASED ENVIRONMENTAL HAZARD DETECTION SYSTEM USING ESP32 AND DROIDSCRIPT</h1>
+        
+        <div style="margin-bottom: 30px;">
+            <h2>Project Overview</h2>
+            <p>
+                The <strong>IoT Fire Monitoring System</strong> is a comprehensive safety solution designed to detect early signs of environmental hazards. By leveraging the power of the <strong>ESP32 microcontroller</strong> and <strong>LittleFS</strong> technology, this system provides real-time surveillance of temperature, smoke, and open flames.
+            </p>
+            <p>
+                Unlike traditional passive alarms, this system creates a responsive dashboard hosted directly on the device <strong>(Localhost)</strong>, allowing users to monitor conditions via their mobile phones while simultaneously providing immediate physical alerts through a custom LED indicator system and a buzzer.
+            </p>
+        </div>
+        
+        <div class="image-container">
+            <p>Figure 1: System Architecture Block Diagram</p>
+            <img src="BlockDiagram.png" alt="Block Diagram" onclick="toggleImageZoom(this)" class="zoomable">
+            <a href="BlockDiagram.png" download class="download-btn">
+                <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18L5.33 9h3.84v4h6.66V9h3.84L12 2z"/></svg>
+            </a>
+            
+            <div class="description-box">
+                <h2>Block Diagram Description</h2>
+                <button class="toggle-btn" onclick="toggleDescription(this)">
+                    <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5H7z"/></svg>
+                </button>
+                <div class="description-content">
+                    <h3>Overview</h3>
+                    <p>The system architecture centers on the <strong>ESP-WROOM-32</strong> microcontroller, which acts as the central processing unit. The data flow operates in three distinct stages:</p>
+                    
+                    <h4>Input Stage: Three environmental sensors continuously feed data into the system:</h4>
+                    <ul>
+                        <li><strong>MQ2 Gas Sensor:</strong> Calibrated to detect Methane gas particles and smoke.</li>
+                        <li><strong>DHT11 Sensor:</strong> Continuously measures ambient Temperature and Humidity.</li>
+                        <li><strong>Flame Sensor:</strong> Detects infrared wavelengths (760nm - 1100nm) to identify open fire sources.</li>
+                    </ul>
+                    
+                    <h4>Processing Stage:</h4>
+                    <ul>
+                        <li>The <strong>ESP32</strong> reads these analog and digital inputs, processing the logic to determine if safety thresholds have been breached. It also hosts the web server.</li>
+                    </ul>
+                    <h4>Output Stage: The system provides dual-layer feedback:</h4>
+                    <ul>
+                        <li><strong>Digital (Web):</strong> A Localhost Website communicates via <strong>Wi-Fi</strong> to display real-time data on a mobile interface.</li>
+                        <li><strong>Physical (Alerts):</strong> LED Indicators and a Buzzer connected to digital output pins provide immediate visual and audible feedback based on specific sensor values.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="image-container" style="margin-top: 50px;">
+            <p>Figure 2: System Circuit Diagram</p>
+            <img src="CircuitDiagram.png" alt="Circuit Diagram" onclick="toggleImageZoom(this)" class="zoomable">
+            <a href="CircuitDiagram.png" download class="download-btn">
+                <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18L5.33 9h3.84v4h6.66V9h3.84L12 2z"/></svg>
+            </a>
+            
+            <div class="description-box circuit-description">
+                <h2>Circuit Diagram Description</h2>
+                <button class="toggle-btn" onclick="toggleDescription(this)">
+                    <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5H7z"/></svg>
+                </button>
+                <div class="description-content">
+                    <h3>Overview</h3>
+                    <p>The hardware implementation is built around the <strong>ESP-WROOM-32 Dev Module</strong>. The circuit focuses on modularity and immediate visual identification of faults.</p>
+                    
+                    <h4>Sensor Integration:</h4>
+                    <ul>
+                        <li>The <strong>Flame Sensor</strong> and <strong>MQ2 Gas Sensor</strong> are connected to the ESP32's analog/digital pins to monitor hazardous elements.</li>
+                        <li>The <strong>DHT11 Sensor</strong> is wired for digital signal transmission to report climate data.</li>
+                    </ul>
+                    
+                    <h4>Visual Status System:</h4>
+                    <ul>
+                        <li><strong>Safety Indicator:</strong> A central <strong>Green LED</strong> remains active to confirm the system is powered and the environment is safe.</li>
+                        <li><strong>Fault Indicators:</strong> The circuit features <strong>Three Individual Red LEDs</strong>, each paired with a specific sensor (Flame, Gas, and Temp). If a sensor detects a danger, its corresponding Red LED activates, allowing the user to instantly pinpoint the source of the problem.</li>
+                    </ul>
+                    
+                    <h3>Power Logic:</h3>
+                    <p>All components share a common Ground (GND) and are powered via the ESP32's 3.3V and 5V voltage rails.</p>
+                </div>
+            </div>
+        </div>
+        
+        <h2>Hardware Specification</h2>
+        
+        <div class="carousel-scene">
+            <div class="carousel">
+                
+                <div class="carousel-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-face card-front esp32">
+                            <img src="ESP32.webp" alt="ESP32 Module">
+                            <h3>ESP-WROOM-32</h3>
+                            <div class="click-hint">Click to flip</div>
+                        </div>
+                        <div class="card-face card-back esp32">
+                            <h3>Specifications</h3>
+                            <ul>
+                                <li><strong>Processor:</strong> Dual-core 32-bit LX6</li>
+                                <li><strong>Connectivity:</strong> 2.4 GHz Wi-Fi & Bluetooth.</li>
+                                <li><strong>Role:</strong> Central Processing & Local Web Server Hosting</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="carousel-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-face card-front flame">
+                            <img src="FlameSensor.webp" alt="Flame Sensor">
+                            <h3>Flame Sensor</h3>
+                            <div class="click-hint">Click to flip</div>
+                        </div>
+                        <div class="card-face card-back flame">
+                            <h3>Specifications</h3>
+                            <ul>
+                                <li><strong>Detection:</strong> Infrared Light (Fire source)</li>
+                                <li><strong>Wavelength:</strong> 760nm - 1100nm (IR spectrum)</li>
+                                <li><strong>Response:</strong> ~1 second</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="carousel-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-face card-front mq2">
+                            <img src="MQ2.webp" alt="MQ2 Sensor">
+                            <h3>MQ-2 Gas Sensor</h3>
+                            <div class="click-hint">Click to flip</div>
+                        </div>
+                        <div class="card-face card-back mq2">
+                            <h3>Specifications</h3>
+                            <ul>
+                                <li><strong>Target Gases:</strong> Methane</li>
+                                <li><strong>Sensitivity:</strong> 300ppm to 10000ppm</li>
+                                <li><strong>Type:</strong> Metal Oxide Semiconductor</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="carousel-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-face card-front dht">
+                            <img src="DHT11.webp" alt="DHT11 Sensor">
+                            <h3>DHT11 Sensor</h3>
+                            <div class="click-hint">Click to flip</div>
+                        </div>
+                        <div class="card-face card-back dht">
+                            <h3>Specifications</h3>
+                            <ul>
+                                <li><strong>Function:</strong> Temperature & Humidity Monitor</li>
+                                <li><strong>Temp Range:</strong> 0°C to 50°C (±2°C accuracy)</li>
+                                <li><strong>Sampling Rate:</strong> 1 Hz (Once per second)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="carousel-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-face card-front led">
+                            <img src="LED.webp" alt="LED Indicator">
+                            <h3>LED Indicators</h3>
+                            <div class="click-hint">Click to flip</div>
+                        </div>
+                        <div class="card-face card-back led">
+                            <h3>Specifications</h3>
+                            <ul>
+                                <li><strong>1x Green LED:</strong> Indicates "System Safe / Normal" status</li>
+                                <li><strong>3x Red LEDs:</strong> Individual Danger Indicators for Flame, Gas, and Temp.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="carousel-card" onclick="flipCard(this)">
+                    <div class="card-inner">
+                        <div class="card-face card-front buzzer">
+                            <img src="Buzzer.webp" alt="Buzzer Module">
+                            <h3>Buzzer</h3>
+                            <div class="click-hint">Click to flip</div>
+                        </div>
+                        <div class="card-face card-back buzzer">
+                            <h3>Specifications</h3>
+                            <ul>
+                                <li><strong>Buzzer:</strong> Active Piezo Buzzer (5V) for audible emergency alerts.</li>
+                                <li><strong>Function:</strong> Activated during Flame or Gas Alert.</li>
+                                <li><strong>Output:</strong> ~85dB Audio Alarm</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+        <div class="drag-instruction">
+            <svg viewBox="0 0 24 24"><path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.09-.34-.14-.54-.14H13V7.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V13l-3.91-.84c-.11-.02-.22-.02-.33 0-.31.04-.59.23-.7.54l-.45 1.19 4.77 4.77c.41.41 1.63 1.34 3.12 1.34h5c.55 0 1-.45 1-1v-5.5c0-.36-.2-.67-.5-.87z"/></svg>
+            Swipe or Drag to Rotate
+        </div>
+        <h2 style="margin-top: 40px;">User Guide & Alert Protocol</h2>
+
+        <div class="hardware-box" style="flex-direction: column; align-items: stretch; padding: 0;">
+            <table class="user-guide-table">
+                <thead>
+                    <tr>
+                        <th>Indicator</th><th>Status</th><th>Behavior</th><th>Meaning</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-label="Indicator">System Safe</td><td data-label="Status">Normal</td><td data-label="Behavior">Green LED (Solid)</td><td data-label="Meaning">Environment is <strong>Safe</strong>. No hazards detected. Silent.</td>
+                    </tr>
+                    <tr>
+                        <td data-label="Indicator" style="color: #dc3545; font-weight: bold;">Flame Alert</td><td data-label="Status">CRITICAL</td><td data-label="Behavior">Red LED 1 (Flashing) + Buzzer</td><td data-label="Meaning"><strong>Open Fire Detected</strong>. Immediate evacuation required.</td>
+                    </tr>
+                    <tr>
+                        <td data-label="Indicator" style="color: #ffb700; font-weight: bold;">Gas Alert</td><td data-label="Status">Warning</td><td data-label="Behavior">Red LED 2 (Solid) + Buzzer</td><td data-label="Meaning">High levels of smoke or flammable gas detected. Check ventilation.</td>
+                    </tr>
+                    <tr>
+                        <td data-label="Indicator" style="color: #ff4500; font-weight: bold;">Temp Alert</td><td data-label="Status">Overheat</td><td data-label="Behavior">Red LED 3 (Solid)</td><td data-label="Meaning">Ambient temperature has exceeded safe limits (e.g., &gt;50°C).</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="About.html" class="nav-btn active">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span>About</span>
+        </a>
+
+        <a href="MAESFF.html" class="nav-btn">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>Home</span>
+        </a>
+
+        <a href="developers.html" class="nav-btn">
+            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <span>Devs</span>
+        </a>
+    </nav>
+
+    <div id="imageModal" class="zoom-modal">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="img01">
+        <div class="zoom-instruction">Use two fingers to pinch/zoom & drag to pan</div>
+    </div>
+
+    <script src="all.js"></script>
+    <script>
+        // --- EXISTING CAROUSEL & INTERFACE LOGIC ---
+        const scene = document.querySelector('.carousel-scene');
+        const carousel = document.querySelector('.carousel');
+        let currentAngle = 0;
+        
+        let isDragging = false;
+        let startX = 0;
+        let startAngle = 0;
+        let dragDifference = 0;
+
+        function handleDragStart(e) {
+            isDragging = true;
+            startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            startAngle = currentAngle;
+            carousel.style.transition = 'none';
+            scene.style.cursor = 'grabbing';
+            dragDifference = 0;
+        }
+
+        function handleDragMove(e) {
+            if (!isDragging) return;
+            e.preventDefault(); 
+            const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const deltaX = currentX - startX;
+            dragDifference = deltaX; 
+            const sensitivity = 0.5; 
+            currentAngle = startAngle + (deltaX * sensitivity);
+            
+            updateCarousel();
+        }
+
+        function handleDragEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            scene.style.cursor = 'grab';
+
+            carousel.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.3, 1)';
+            
+            const snapAngle = Math.round(currentAngle / 60) * 60;
+            currentAngle = snapAngle;
+            
+            updateCarousel();
+
+            if (Math.abs(dragDifference) > 10) {
+                    const allCards = document.querySelectorAll('.carousel-card');
+                    allCards.forEach(card => card.classList.remove('flipped'));
+            }
+        }
+
+        function updateCarousel() {
+            const zOffset = window.innerWidth < 600 ? 200 : (window.innerWidth < 768 ? 260 : 288);
+            carousel.style.transform = `translateZ(-${zOffset}px) rotateY(${currentAngle}deg)`;
+        }
+        scene.addEventListener('mousedown', handleDragStart);
+        scene.addEventListener('touchstart', handleDragStart);
+
+        window.addEventListener('mousemove', handleDragMove);
+        window.addEventListener('touchmove', handleDragMove);
+
+        window.addEventListener('mouseup', handleDragEnd);
+        window.addEventListener('touchend', handleDragEnd);
+
+        function flipCard(element) {
+            if (Math.abs(dragDifference) > 5) return;
+            
+            element.classList.toggle('flipped');
+        }
+
+        updateCarousel();
+        window.addEventListener('resize', updateCarousel);
+        
+        function toggleDescription(btn) {
+            const content = btn.nextElementSibling;
+            content.classList.toggle('open');
+            const svg = btn.querySelector('svg');
+            if(content.classList.contains('open')) {
+                svg.style.transform = 'rotate(180deg)';
+            } else {
+                svg.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // --- NEW: ZOOM MODAL LOGIC ---
+        const modal = document.getElementById("imageModal");
+        const modalImg = document.getElementById("img01");
+        let currentScale = 1;
+        let currentX = 0;
+        let currentY = 0;
+        let startX_Zoom = 0;
+        let startY_Zoom = 0;
+        let initialPinchDistance = 0;
+        let isDraggingImage = false;
+
+        // Open Modal
+        function toggleImageZoom(element) {
+            modal.style.display = "flex";
+            modalImg.src = element.src; 
+            currentScale = 1;
+            currentX = 0;
+            currentY = 0;
+            updateTransform();
+        }
+
+        // Close Modal
+        function closeModal() {
+            modal.style.display = "none";
+        }
+
+        function updateTransform() {
+            modalImg.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentScale})`;
+        }
+
+        function getDistance(touches) {
+            return Math.hypot(
+                touches[0].pageX - touches[1].pageX,
+                touches[0].pageY - touches[1].pageY
+            );
+        }
+
+        // Touch Events for Zoom/Pan
+        modalImg.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDraggingImage = true;
+                startX_Zoom = e.touches[0].pageX - currentX;
+                startY_Zoom = e.touches[0].pageY - currentY;
+            } else if (e.touches.length === 2) {
+                isDraggingImage = false; 
+                initialPinchDistance = getDistance(e.touches);
+            }
+        });
+
+        modalImg.addEventListener('touchmove', (e) => {
+            e.preventDefault(); 
+            if (e.touches.length === 1 && isDraggingImage) {
+                currentX = e.touches[0].pageX - startX_Zoom;
+                currentY = e.touches[0].pageY - startY_Zoom;
+                updateTransform();
+            } 
+            else if (e.touches.length === 2) {
+                const currentDistance = getDistance(e.touches);
+                if (initialPinchDistance > 0) {
+                    const pinchScale = currentDistance / initialPinchDistance;
+                    const newScale = currentScale * pinchScale;
+                    if (newScale > 0.5 && newScale < 5) {
+                        currentScale = newScale;
+                        initialPinchDistance = currentDistance; 
+                        updateTransform();
+                    }
+                }
+            }
+        });
+
+        modalImg.addEventListener('touchend', () => {
+            isDraggingImage = false;
+            initialPinchDistance = 0;
+        });
+
+        // Mouse events for Desktop Zoom/Pan
+        modalImg.addEventListener('mousedown', (e) => {
+            isDraggingImage = true;
+            startX_Zoom = e.clientX - currentX;
+            startY_Zoom = e.clientY - currentY;
+            modalImg.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDraggingImage || modal.style.display === 'none') return;
+            e.preventDefault();
+            currentX = e.clientX - startX_Zoom;
+            currentY = e.clientY - startY_Zoom;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDraggingImage = false;
+            modalImg.style.cursor = 'grab';
+        });
+
+        modal.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY * -0.001; 
+            const newScale = currentScale + delta;
+            if (newScale > 0.5 && newScale < 5) {
+                currentScale = newScale;
+                updateTransform();
+            }
+        });
+    </script>
+</body>
+</html>
